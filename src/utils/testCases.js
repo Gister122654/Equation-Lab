@@ -94,6 +94,20 @@ export const testCases = [
     expected: 'met',
     explanation: 'Hai quỹ đạo trùng nhau nhưng chỉ cùng ở trên AB tại t=10 giờ, đúng tại điểm B.',
   },
+  {
+    id: 'T14',
+    title: 'Xác định xe sau sau khi cả hai xuất phát',
+    input: { distance: 500, vehicle1: create('Xe A', 20, 0, 10, 1), vehicle2: create('Xe B', 30, 2, 20, 1) },
+    expected: 'met',
+    explanation: 'Tại lúc xe B xuất phát, xe B mới là xe phía sau nhưng chạy nhanh hơn; hai xe gặp ở km 110 sau 5 giờ.',
+  },
+  {
+    id: 'T15',
+    title: 'Dạng bài không khớp chiều xe',
+    input: { type: 'chase', distance: 100, vehicle1: create('Xe A', 30, 0, 0, 1), vehicle2: create('Xe B', 20, 0, 100, -1) },
+    expected: 'met_with_warning',
+    explanation: 'Nghiệm vật lí vẫn hợp lệ nhưng dữ liệu hai xe ngược hướng không khớp loại bài cùng chiều đã chọn.',
+  },
 ]
 
 export function runTestCase(testCase) {

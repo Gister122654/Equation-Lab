@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, ArrowRight, Atom, BookOpenCheck, FlaskConical, FunctionSquare, Home, Menu, Route, X } from 'lucide-react'
+import { Activity, ArrowRight, Atom, BookOpenCheck, FlaskConical, FunctionSquare, Home, Menu, Route, Share2, X } from 'lucide-react'
 import HomePage from './pages/HomePage.jsx'
 import SolverPage from './pages/SolverPage.jsx'
 import SimulationPage from './pages/SimulationPage.jsx'
@@ -7,6 +7,7 @@ import TestCasesPage from './pages/TestCasesPage.jsx'
 import QuestionsPage from './pages/QuestionsPage.jsx'
 import { initialProblem } from './data/presets.js'
 import { solveMotion } from './utils/solver.js'
+import ShareDialog from './components/ShareDialog.jsx'
 
 const navigation = [
   { id: 'home', label: 'Trang chủ', icon: Home },
@@ -20,6 +21,7 @@ export default function App() {
   const [problem, setProblem] = useState(initialProblem)
   const [page, setPage] = useState('home')
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const result = useMemo(() => solveMotion(problem), [problem])
   const navigate = (nextPage) => {
     setPage(nextPage)
@@ -42,10 +44,11 @@ export default function App() {
       <nav className="desktop-nav" aria-label="Điều hướng chính">{navigation.map(({ id, label, icon: Icon }) =>
         <button key={id} onClick={() => navigate(id)} className={page === id ? 'nav-item active' : 'nav-item'}><Icon size={15} />{label}</button>
       )}</nav>
-      <div className="topbar-right"><span className="online-indicator"><i /> LAB SẴN SÀNG</span><button className="mobile-menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label={mobileMenu ? 'Đóng menu' : 'Mở menu'}>{mobileMenu ? <X /> : <Menu />}</button></div>
+      <div className="topbar-right"><span className="online-indicator"><i /> LAB SẴN SÀNG</span><button className="share-trigger" onClick={() => setShareOpen(true)}><Share2 size={15} /> Chia sẻ</button><button className="mobile-menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label={mobileMenu ? 'Đóng menu' : 'Mở menu'}>{mobileMenu ? <X /> : <Menu />}</button></div>
       {mobileMenu && <nav className="mobile-nav">{navigation.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => navigate(id)} className={page === id ? 'active' : ''}><Icon size={17} />{label}<ArrowRight size={14} /></button>)}</nav>}
     </header>
     <main className="main-content" key={page}>{currentPage}</main>
     <footer className="footer"><div className="footer-brand"><span className="brand-symbol small"><Atom size={16} /></span><span>AI MOTION EQUATION LAB</span></div><p>Một phòng thí nghiệm nhỏ cho những câu hỏi lớn.</p><span className="footer-tag"><Route size={14} /> TOÁN × VẬT LÍ · THCS</span></footer>
+    {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
   </div>
 }

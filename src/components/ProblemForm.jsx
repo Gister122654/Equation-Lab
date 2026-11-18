@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, Sparkles } from 'lucide-react'
+import { AlertTriangle, ArrowLeftRight, Sparkles } from 'lucide-react'
 import { presets } from '../data/presets.js'
 
 const directionOptions = [

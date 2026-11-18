@@ -4,15 +4,24 @@ import { formatNumber, positionAt } from '../utils/solver.js'
 
 export default function MotionChart({ problem, result }) {
   const distance = Number(problem.distance)
-  const maximum = result.status === 'met' ? Math.max(result.solution.time * 1.15, 0.5) : 3
+  const vehicles = [problem.vehicle1, problem.vehicle2]
+  const departures = vehicles.map((vehicle) => Number(vehicle.departure)).filter(Number.isFinite)
+  const routeEnds = vehicles.map((vehicle) => {
+    const position = Number(vehicle.position)
+    const direction = Number(vehicle.direction)
+    const speed = Number(vehicle.speed)
+    return Number(vehicle.departure) + (direction === 1 ? distance - position : position) / speed
+  }).filter(Number.isFinite)
+  const completeRouteEnd = Math.max(0.5, ...departures, ...routeEnds)
+  const maximum = result.status === 'met'
+    ? Math.max(result.solution.time * 1.15, ...departures, 0.5)
+    : completeRouteEnd * 1.05
   const data = Array.from({ length: 41 }, (_, index) => {
     const time = (maximum * index) / 40
     const value = { time }
     ;[problem.vehicle1, problem.vehicle2].forEach((vehicle, vehicleIndex) => {
       const start = Number(vehicle.position)
       const departure = Number(vehicle.departure)
-      const direction = Number(vehicle.direction)
-      const speed = Number(vehicle.speed)
       const position = positionAt(vehicle, time)
       const onRoad = time < departure || (position >= 0 && position <= distance)
       value[`vehicle${vehicleIndex + 1}`] = onRoad ? position : null

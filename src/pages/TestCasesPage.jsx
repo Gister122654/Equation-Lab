@@ -15,7 +15,7 @@ export default function TestCasesPage() {
   const [runs, setRuns] = useState(null)
   const passed = runs?.filter((item) => item.passed).length ?? 0
   return <div className="page-stack">
-    <div className="page-title"><div><span className="eyebrow">KIỂM THỬ LOGIC TOÁN HỌC</span><h1>Test Cases</h1><p>13 trường hợp bình thường, biên và dữ liệu không hợp lệ.</p></div><div className="page-title-mark"><FlaskConical size={23} /><span>13 test</span></div></div>
+    <div className="page-title"><div><span className="eyebrow">KIỂM THỬ LOGIC TOÁN HỌC</span><h1>Test Cases</h1><p>15 trường hợp bình thường, biên và dữ liệu không hợp lệ.</p></div><div className="page-title-mark"><FlaskConical size={23} /><span>15 test</span></div></div>
     <Panel className="test-toolbar">
       <div><span className="eyebrow">BỘ KIỂM THỬ TỰ ĐỘNG</span><h2>Kiểm tra bộ giải chuyển động</h2><p>Mỗi test chạy qua cùng hàm giải được dùng trong ứng dụng.</p></div>
       <button className="button button-primary" onClick={() => setRuns(testCases.map(runTestCase))}><Play size={16} /> Chạy tất cả test</button>

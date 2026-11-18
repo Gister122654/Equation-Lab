@@ -72,12 +72,22 @@ export function solveMotion(problem) {
   const p2 = numberFrom(second.position)
   const d1 = numberFrom(first.direction)
   const d2 = numberFrom(second.direction)
+  if (problem.type === 'opposite' && d1 === d2) {
+    warnings.push('Dạng bài đang chọn là đi ngược chiều nhưng hai xe cùng hướng; hãy kiểm tra lại chiều chuyển động.')
+  } else if (problem.type === 'chase' && d1 !== d2) {
+    warnings.push('Dạng bài đang chọn là đuổi kịp nhưng hai xe ngược hướng; hãy kiểm tra lại chiều chuyển động.')
+  } else if (problem.type === 'staggered' && Math.abs(h1 - h2) < EPSILON) {
+    warnings.push('Dạng bài đang chọn là xuất phát lệch giờ nhưng hai giờ xuất phát đang bằng nhau.')
+  }
   const coefficient = d1 * v1 - d2 * v2
   const constant = p2 - p1 + d1 * v1 * h1 - d2 * v2 * h2
   const lowerTime = Math.max(h1, h2)
   const routeTime1 = h1 + (d1 === 1 ? distance - p1 : p1) / v1
   const routeTime2 = h2 + (d2 === 1 ? distance - p2 : p2) / v2
   const sharedRouteEnd = Math.min(routeTime1, routeTime2)
+  if (![coefficient, constant, lowerTime, routeTime1, routeTime2].every(Number.isFinite)) {
+    return invalidResult(['Dữ liệu quá lớn hoặc quá nhỏ để tính ổn định; hãy nhập các giá trị thực tế hơn.'], warnings)
+  }
   const equation = {
     coefficient: clean(coefficient),
     constant: clean(constant),
@@ -137,6 +147,9 @@ export function solveMotion(problem) {
   const time = constant / coefficient
   const meetingPosition = positionAt(first, time)
   const otherPosition = positionAt(second, time)
+  if (![time, meetingPosition, otherPosition].every(Number.isFinite)) {
+    return invalidResult(['Không thể tính nghiệm hữu hạn từ dữ liệu này; hãy giảm các giá trị đầu vào.'], warnings)
+  }
   const solution = { time: clean(time), position: clean(meetingPosition), otherPosition: clean(otherPosition) }
   const reasons = []
 
@@ -153,12 +166,16 @@ export function solveMotion(problem) {
   }
 
   const sameDirection = d1 === d2
+  const firstPositionAtStart = positionAt(first, lowerTime)
+  const secondPositionAtStart = positionAt(second, lowerTime)
   const follower = sameDirection
-    ? (d1 === 1 ? (p1 <= p2 ? first : second) : (p1 >= p2 ? first : second))
+    ? (d1 === 1
+      ? (firstPositionAtStart <= secondPositionAtStart ? first : second)
+      : (firstPositionAtStart >= secondPositionAtStart ? first : second))
     : null
   if (sameDirection && follower) {
     const leader = follower === first ? second : first
-    if (numberFrom(follower.speed) <= numberFrom(leader.speed) && Math.abs(p1 - p2) > EPSILON) {
+    if (numberFrom(follower.speed) <= numberFrom(leader.speed) && Math.abs(firstPositionAtStart - secondPositionAtStart) > EPSILON) {
       warnings.push('Xe phía sau chạy chậm hơn hoặc bằng xe phía trước nên không thể đuổi kịp trên đoạn đường này.')
     }
   }
@@ -204,6 +221,40 @@ export function getSolutionSteps(problem, result) {
   const d2 = numberFrom(second.direction)
   const h1 = numberFrom(first.departure)
   const h2 = numberFrom(second.departure)
+  if (Math.abs(result.equation.coefficient) < EPSILON) {
+    return [
+      {
+        title: 'Đặt ẩn và điều kiện',
+        formula: `t\\ge${fm(Math.max(h1, h2))}\\;\\text{(h)},\\qquad 0\\le s\\le${fm(Number(problem.distance))}\\;\\text{(km)}`,
+        reason: 'Chỉ xét thời gian cả hai xe cùng bắt đầu chuyển động và vị trí còn thuộc đoạn AB.',
+      },
+      {
+        title: 'Biểu diễn vị trí',
+        formula: `s_1=${fm(p1)}${d1 === 1 ? '+' : '-'}${fm(v1)}(t-${fm(h1)}),\\qquad s_2=${fm(p2)}${d2 === 1 ? '+' : '-'}${fm(v2)}(t-${fm(h2)})`,
+        reason: 'Từ t=s/v suy ra quãng đường bằng vận tốc nhân thời gian; dấu của v thể hiện chiều chuyển động.',
+      },
+      {
+        title: 'Lập phương trình gặp nhau',
+        formula: `s_1=s_2\\quad\\Longrightarrow\\quad ${result.equation.latex}`,
+        reason: 'Hai biểu thức vị trí trùng nhau trên toàn đường thẳng nên phương trình rút gọn thành một đồng nhất thức.',
+      },
+      {
+        title: 'Giao miền chuyển động',
+        formula: `t=${fm(t)}\\;\\text{(h)}`,
+        reason: 'Dù phương trình có dạng 0=0, hai xe chỉ cùng ở trên đoạn AB tại đúng thời điểm biên t = ' + f(t) + ' giờ.',
+      },
+      {
+        title: 'Xác định vị trí gặp',
+        formula: `s_1(${fm(t)})=${fm(result.check.firstPosition)}\\;\\text{km}=s_2(${fm(t)})`,
+        reason: `Hai xe gặp tại vị trí ${f(position)} km tính từ A, thuộc đoạn AB.`,
+      },
+      {
+        title: 'Thử lại và kết luận',
+        formula: `${fm(result.check.equationLeft)}=${fm(result.check.equationRight)},\\qquad s_1=s_2`,
+        reason: 'Phương trình và hai vị trí đều khớp; nghiệm được xác định duy nhất nhờ miền chuyển động chung chỉ có một thời điểm.',
+      },
+    ]
+  }
   const steps = [
     {
       title: 'Đặt ẩn và điều kiện',

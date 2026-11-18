@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BlockMath } from 'react-katex'
 import { ArrowLeft, ArrowRight, BookOpenCheck } from 'lucide-react'
 import Panel from './Panel.jsx'
@@ -8,12 +8,17 @@ export default function StepGuide({ problem, result }) {
   const [index, setIndex] = useState(0)
   const steps = getSolutionSteps(problem, result)
   const [showAll, setShowAll] = useState(false)
+  const activeIndex = steps.length ? Math.min(index, steps.length - 1) : 0
+
+  useEffect(() => {
+    if (index !== activeIndex) setIndex(activeIndex)
+  }, [index, activeIndex])
 
   if (!steps.length) {
     return <Panel><div className="empty-state"><BookOpenCheck size={22} /><p>Hãy nhập dữ liệu hợp lệ để xem lời giải từng bước.</p></div></Panel>
   }
 
-  const visibleSteps = showAll ? steps : [steps[index]]
+  const visibleSteps = showAll ? steps : [steps[activeIndex]]
   return (
     <Panel className="step-panel">
       <div className="panel-heading">
@@ -23,9 +28,9 @@ export default function StepGuide({ problem, result }) {
       <div className="steps-list">
         {visibleSteps.map((step, visibleIndex) => (
           <article className="step-card" key={step.title}>
-            <div className="step-number">{showAll ? steps.indexOf(step) + 1 : index + 1}</div>
+            <div className="step-number">{showAll ? steps.indexOf(step) + 1 : activeIndex + 1}</div>
             <div className="step-content">
-              <div className="step-title-row"><h3>{step.title}</h3>{!showAll && <span>{index + 1} / {steps.length}</span>}</div>
+              <div className="step-title-row"><h3>{step.title}</h3>{!showAll && <span>{activeIndex + 1} / {steps.length}</span>}</div>
               <div className="math-block"><BlockMath math={step.formula} /></div>
               <div className="why-note"><strong>Vì sao làm vậy?</strong><p>{step.reason}</p></div>
             </div>
@@ -33,9 +38,9 @@ export default function StepGuide({ problem, result }) {
         ))}
       </div>
       {!showAll && <div className="step-controls">
-        <button className="button button-outline" onClick={() => setIndex(Math.max(0, index - 1))} disabled={index === 0}><ArrowLeft size={16} /> Trước</button>
-        <div className="step-dots">{steps.map((step, i) => <button key={step.title} aria-label={`Bước ${i + 1}`} onClick={() => setIndex(i)} className={index === i ? 'selected' : ''} />)}</div>
-        <button className="button button-primary" onClick={() => setIndex(Math.min(steps.length - 1, index + 1))} disabled={index === steps.length - 1}>Tiếp <ArrowRight size={16} /></button>
+        <button className="button button-outline" onClick={() => setIndex(Math.max(0, activeIndex - 1))} disabled={activeIndex === 0}><ArrowLeft size={16} /> Trước</button>
+        <div className="step-dots">{steps.map((step, i) => <button key={step.title} aria-label={`Bước ${i + 1}`} onClick={() => setIndex(i)} className={activeIndex === i ? 'selected' : ''} />)}</div>
+        <button className="button button-primary" onClick={() => setIndex(Math.min(steps.length - 1, activeIndex + 1))} disabled={activeIndex === steps.length - 1}>Tiếp <ArrowRight size={16} /></button>
       </div>}
     </Panel>
   )

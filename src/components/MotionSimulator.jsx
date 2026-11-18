@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pause, Play, RotateCcw, Timer } from 'lucide-react'
 import Panel from './Panel.jsx'
+import VehicleIllustration from './VehicleIllustration.jsx'
 import { formatNumber, positionAt } from '../utils/solver.js'
 
 function clamp(value, min, max) {
@@ -11,6 +12,7 @@ export default function MotionSimulator({ problem, result }) {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [speedMultiplier, setSpeedMultiplier] = useState(1)
+  const previousFrame = useRef(null)
   const distance = Number(problem.distance)
   const maxTime = useMemo(() => {
     const routeEnds = [problem.vehicle1, problem.vehicle2].map((vehicle) => {
@@ -19,23 +21,29 @@ export default function MotionSimulator({ problem, result }) {
       const speed = Number(vehicle.speed)
       return Number(vehicle.departure) + (direction === 1 ? distance - pos : pos) / speed
     }).filter(Number.isFinite)
-    return clamp(Math.max(2, ...(routeEnds.length ? routeEnds : [2]), ...(result.status === 'met' ? [result.solution.time + 0.5] : [])), 0.1, 48)
+    return Math.max(2, ...(routeEnds.length ? routeEnds : [2]), ...(result.status === 'met' ? [result.solution.time + 0.5] : []))
   }, [distance, problem, result])
 
   useEffect(() => {
     if (!playing) return undefined
-    const interval = window.setInterval(() => {
-      setTime((current) => {
-        const next = current + 0.01 * speedMultiplier
-        if (next >= maxTime) {
-          setPlaying(false)
-          return maxTime
-        }
-        return next
-      })
-    }, 50)
-    return () => window.clearInterval(interval)
+    let frameId
+    const advance = (timestamp) => {
+      if (previousFrame.current === null) previousFrame.current = timestamp
+      const elapsedSeconds = (timestamp - previousFrame.current) / 1000
+      previousFrame.current = timestamp
+      setTime((current) => Math.min(current + elapsedSeconds * 0.2 * speedMultiplier, maxTime))
+      frameId = window.requestAnimationFrame(advance)
+    }
+    frameId = window.requestAnimationFrame(advance)
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      previousFrame.current = null
+    }
   }, [playing, speedMultiplier, maxTime])
+
+  useEffect(() => {
+    if (playing && time >= maxTime) setPlaying(false)
+  }, [playing, time, maxTime])
 
   useEffect(() => {
     setTime(0)
@@ -50,7 +58,7 @@ export default function MotionSimulator({ problem, result }) {
     const raw = positionAt(vehicle, time)
     return { vehicle, index, position: clamp(raw, 0, distance), waiting: time < Number(vehicle.departure), offRoad: raw < 0 || raw > distance }
   })
-  const gap = Math.abs(positionAt(problem.vehicle1, time) - positionAt(problem.vehicle2, time))
+  const gap = Math.abs(cars[0].position - cars[1].position)
   const roadStart = 8
   const roadWidth = 84
 
@@ -66,9 +74,10 @@ export default function MotionSimulator({ problem, result }) {
         <div className="road-line"><span className="road-dashes" /></div>
         {cars.map(({ vehicle, index, position, waiting, offRoad }) => {
           const x = roadStart + (position / distance) * roadWidth
-          return <div key={index} className={`vehicle-marker marker-${index + 1}`} style={{ left: `${x}%` }}>
-            <div className="car-icon">{index === 0 ? '🚙' : '🚗'}</div>
-            <span>{vehicle.name || `Xe ${index + 1}`}</span>
+          return <div key={index} className={`vehicle-marker marker-${index + 1}${playing && !waiting ? ' is-moving' : ''}`} style={{ left: `${x}%` }}>
+            {playing && !waiting && <span className="vehicle-motion-trail" aria-hidden="true" />}
+            <VehicleIllustration className={`car-icon car-color-${index + 1}`} direction={Number(vehicle.direction)} vehicleName={vehicle.name || `Xe ${index + 1}`} />
+            <span className="vehicle-name">{vehicle.name || `Xe ${index + 1}`}</span>
             {waiting && <small>chưa xuất phát</small>}
             {!waiting && offRoad && <small>ngoài AB</small>}
           </div>

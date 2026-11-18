@@ -1,6 +1,7 @@
 import { ArrowRight, Atom, Compass, FlaskConical, FunctionSquare, Route, Sparkles } from 'lucide-react'
 import { BlockMath } from 'react-katex'
 import Panel from '../components/Panel.jsx'
+import VehicleIllustration from '../components/VehicleIllustration.jsx'
 import { formatNumber } from '../utils/solver.js'
 
 const features = [
@@ -10,6 +11,16 @@ const features = [
 ]
 
 export default function HomePage({ problem, result, onNavigate }) {
+  const resultSummary = result.status === 'met'
+    ? `Gặp nhau sau ${formatNumber(result.solution.time)} giờ`
+    : result.status === 'invalid'
+      ? 'Chưa có dữ liệu hợp lệ'
+      : result.status === 'infinite'
+        ? 'Hai xe trùng vị trí trong một khoảng thời gian'
+        : result.status === 'no_solution'
+          ? 'Hai quỹ đạo không giao nhau'
+          : 'Không gặp nhau hợp lệ trên đoạn AB'
+
   return (
     <div className="page-stack">
       <section className="hero">
@@ -27,7 +38,8 @@ export default function HomePage({ problem, result, onNavigate }) {
           <div className="orbit orbit-one" /><div className="orbit orbit-two" />
           <div className="orbit-label label-x">x(t)</div><div className="orbit-label label-v">v →</div>
           <div className="hero-road"><span> A </span><i /><span> B </span></div>
-          <div className="hero-car car-a">🚙</div><div className="hero-car car-b">🚗</div>
+          <VehicleIllustration className="hero-car car-a car-color-1" direction={Number(problem.vehicle1.direction)} vehicleName={problem.vehicle1.name || 'Phương tiện 1'} />
+          <VehicleIllustration className="hero-car car-b car-color-2" direction={Number(problem.vehicle2.direction)} vehicleName={problem.vehicle2.name || 'Phương tiện 2'} />
           <div className="hero-coordinate">s = vt + s₀</div>
           <Atom className="atom-icon" size={40} strokeWidth={1} />
         </div>
@@ -54,7 +66,7 @@ export default function HomePage({ problem, result, onNavigate }) {
         )}</div>
       </section>
       <Panel className="result-strip">
-        <div><span className="eyebrow">KẾT QUẢ ĐANG KIỂM TRA</span><strong>{result.status === 'met' ? `Gặp nhau sau ${formatNumber(result.solution.time)} giờ` : result.status === 'invalid' ? 'Chưa có dữ liệu hợp lệ' : 'Chưa có giao điểm trên đoạn AB'}</strong></div>
+        <div><span className="eyebrow">KẾT QUẢ ĐANG KIỂM TRA</span><strong>{resultSummary}</strong></div>
         <button className="button button-outline" onClick={() => onNavigate('simulation')}>Xem mô phỏng <ArrowRight size={16} /></button>
       </Panel>
     </div>
